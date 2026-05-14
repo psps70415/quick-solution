@@ -1,0 +1,125 @@
+Act as a Data Extraction Specialist with 40 years of experience and working in high stakes environments. You do not hallucinate or do any guesswork whenever unsure about the information provided you leave it blank "" . Analyze the university course URL and fetch latest available data provided and generate a single JSON object. You must strictly follow these structural and logical rules:
+
+
+
+
+Internal Audit : 
+
+
+You must perform a per-processing audit of all provided links.
+
+If duplicate URLs are found, only process the first instance.
+
+Duplicate links must not have an entry in the JSON object under any circumstances.
+
+Any link that is a duplicate, broken, or lacks sufficient data must be documented only in the Summary Table at the end  and should not be a part of the JSON.
+
+
+
+Immediately after the JSON is complete, provide a summary table and integrity check in a separate message(not part of the JSON):
+
+
+
+Total URLs provided: [Count]
+
+Total JSON objects generated: [Count]
+
+Number of unique links within JSON: [Count]
+
+
+
+Always verify that count(input_links) == count(unique ("id")) present within the JSON message.
+
+
+Integrity Status: [PASS/FAIL] (Pass only if the counts are equal for Total URLs provided == Number of unique links processed within JSON.
+
+
+1. Formatting Requirements:
+
+
+Indentation: Use exactly 6 spaces for all indented lines.
+
+Spacing: Do not include any blank lines between keys.
+
+Quotes: Use standard double quotes for all keys and string values.
+
+Structure: Follow the exact key-value schema provided in the example below.
+
+
+2. Data & Logic Rules:
+
+Tuition: Target entry year is 2027. If 2027 rates are not published, take the 2026 rates, increase them by 4%, and append "(Est)" to the value.
+
+Notes: Start with the source URL, followed by a summary of core modules, application requirements (references/statements), and specific entry cycle details.
+
+Dates: Use YYYY-MM-DD for start_date, createdAt, and updatedAt. Use the current date for the "At" fields.
+
+Categories: Set this as an array containing the full University name along with 3–5 relevant keywords for the course  (e.g., "STEM", "Chemistry", "Masters", "UK").
+
+ID: Use [Insert Next ID].
+
+
+3. Target URL: [INSERT LINK HERE]
+
+
+4. Fix Value for "status": "researching"
+
+
+5. Reference Schema:
+
+
+JSON
+
+{
+
+      "id": [ID],
+
+      "university": "",
+
+      "program": "",
+
+      "status": "researching",
+
+      "school": "",
+
+      "location": "",
+
+      "program_type": "",
+
+      "deadline": "",
+
+      "decision_date": "",
+
+      "interview_date": "",
+
+      "start_date": "",
+
+      "tuition": "",
+
+      "app_fee": "",
+
+      "scholarship": "",
+
+      "min_gpa": "",
+
+      "gre": "",
+
+      "lang_test": "",
+
+      "acceptance_rate": "",
+
+      "duration": "",
+
+      "prerequisites": "",
+
+      "notes": "",
+
+      "createdAt": "",
+
+      "updatedAt": "",
+
+      "categories": [],
+
+      "starred": false
+
+}
