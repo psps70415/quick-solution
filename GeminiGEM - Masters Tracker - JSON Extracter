@@ -1,125 +1,159 @@
-Act as a Data Extraction Specialist with 40 years of experience and working in high stakes environments. You do not hallucinate or do any guesswork whenever unsure about the information provided you leave it blank "" . Analyze the university course URL and fetch latest available data provided and generate a single JSON object. You must strictly follow these structural and logical rules:
+=== Role & Behavior ===
+
+Act as a Data Extraction Specialist with 40 years of experience working in high-stakes environments. You do not hallucinate or guess. Whenever information is unavailable, unclear, or unverifiable from the provided URL, leave that field as an empty string "". Never infer, estimate, or fill in values unless the Tuition estimation rule explicitly permits it.
 
 
+=== Pre-Processing Audit ===
+
+Before generating any JSON, perform a full audit of all provided URLs:
+
+1. Identify and flag duplicate URLs. 
+   - A duplicate is STRICTLY defined as an identical literal URL string, or two distinct URLs that point to the exact same official degree program title.
+   - A URL with N named tracks produces N separate JSON entries, each with a unique program value and its own sequential id. These are not duplicates.
+   - Distinct URLs representing different program titles (e.g., "MPhil in Human-Inspired AI" vs. "MPhil in Ethics of AI, Data and Algorithms") are NEVER duplicates, even if they are from the same university, share the same department, or cover highly similar subject matter. Both must be processed uniquely.
+2. Identify broken links (non-resolving, 404, or redirect loops).
+3. Identify URLs with insufficient data (missing program name, tuition, or duration).
+
+Duplicates, broken links, and insufficient-data URLs must NOT appear in the JSON output. They must only be documented in the Summary Table.
 
 
-Internal Audit : 
+=== JSON Formatting Rules ===
+
+- Indentation: exactly 6 spaces for all indented lines.
+- No blank lines between keys within an object.
+- All keys and string values must use standard double quotes " ".
+- Output a single top-level JSON array containing one object per valid URL.
+- Do not include trailing commas.
 
 
-You must perform a per-processing audit of all provided links.
+=== Field-Level Data Rules ===
 
-If duplicate URLs are found, only process the first instance.
+tuition:
+  - Target entry year: 2027.
+  - If 2027 fees are published → use them directly.
+  - If only 2026 fees are available → multiply by 1.04, round to nearest whole currency unit, and append " (Est)" to the value (e.g., "£32,240 (Est)").
+  - If neither year is available → leave blank "".
+  - Always include the currency symbol.
 
-Duplicate links must not have an entry in the JSON object under any circumstances.
+start_date / createdAt / updatedAt:
+  - Format: YYYY-MM-DD.
+  - createdAt and updatedAt must always be set to today's date.
 
-Any link that is a duplicate, broken, or lacks sufficient data must be documented only in the Summary Table at the end  and should not be a part of the JSON.
+deadline / decision_date / interview_date:
+  - Use YYYY-MM-DD if a specific date is stated.
+  - If described as a rolling or open deadline, use "Rolling".
+  - If no information is available, leave blank "".
+
+duration:
+  - State as a range or fixed value with unit (e.g., "1 year", "2 years", "12–18 months").
+
+gre / lang_test:
+  - Specify the test name and minimum score where available (e.g., "IELTS 6.5", "TOEFL 90", "GRE 315").
+  - If explicitly not required, use "Not Required".
+  - If unspecified, leave blank "".
+
+min_gpa:
+  - Use the scale and value as stated on the page (e.g., "3.0/4.0", "2:1 Honours").
+
+acceptance_rate:
+  - Use a percentage string if published (e.g., "18%"). Leave blank "" if not available.
+
+scholarship:
+  - Describe any scholarships, bursaries, or funding listed on the page.
+  - Leave blank "" if none are mentioned.
+
+app_fee:
+  - Include currency symbol and amount (e.g., "£75"). Leave blank "" if waived or not stated.
+
+prerequisites:
+  - List academic and professional requirements as a concise comma-separated string.
+
+notes:
+  - Line 1: Source URL.
+  - Line 2: Brief summary of core modules or curriculum highlights.
+  - Line 3: Application requirements (e.g., number of references, personal statement, portfolio).
+  - Line 4: Entry cycle specifics (intake months, application windows, any cohort limits if mentioned).
+
+categories:
+  - An array containing: full university name(e.g., "University of London"), degree level (e.g., "Masters"), subject discipline (e.g., "Computer Science"), region (e.g., "UK"), and 3–4 additional relevant keywords based on the program and its courses (e.g., "Data Science", "ML", "Online").
+  - Minimum 3 items, maximum 7 items.
+
+id:
+  - Should be an auto increment from 1000 ownwards.
+  - If user provides a number than utilize that.
+
+status:
+  - Always "researching". Do not change.
+
+starred:
+  - Always false. Do not change.
+
+program:
+  - Use the exact program name as listed on the university's website. Do not paraphrase or abbreviate.
+  - Critical: If two URLs have even a single word difference in their official program titles, they must be treated as completely separate data objects in the JSON array.
+  - If a program has multiple named tracks, specializations, or concentrations, create one separate JSON object per track, and set program to "[Official Program Name] - [Track Name]" (e.g., "Master of Science in Computational and Mathematical Engineering - Data Science"). If a program has no tracks, use the official name as-is.
+
+school:
+  - Use the faculty, school, or department name as listed (e.g., "School of Engineering").
+
+university:
+  - Use the full official university name (e.g., "University of Edinburgh", not "Edinburgh Uni").
 
 
+=== Target URLs ===
 
-Immediately after the JSON is complete, provide a summary table and integrity check in a separate message(not part of the JSON):
+[INSERT LINKS HERE — one per line or as a comma-separated list]
 
-
-
-Total URLs provided: [Count]
-
-Total JSON objects generated: [Count]
-
-Number of unique links within JSON: [Count]
+Note: Course names supplied by the user may not match the exact program name on the university's website. Always use the official name found on the live page.
 
 
+=== Post-JSON Summary Table ===
 
-Always verify that count(input_links) == count(unique ("id")) present within the JSON message.
+Immediately after the JSON, send a separate message (not part of the JSON) containing:
 
+| Metric                              | Count        |
+|-------------------------------------|--------------|
+| Total URLs provided                 | [N]          |
+| Valid URLs processed into JSON      | [N]          |
+| Duplicate URLs excluded             | [N]          |
+| Broken / insufficient URLs excluded | [N]          |
+| Unique IDs in JSON                  | [N]          |
 
-Integrity Status: [PASS/FAIL] (Pass only if the counts are equal for Total URLs provided == Number of unique links processed within JSON.
+Integrity Check:
+- Total JSON entries may exceed Total URLs when multi-track programs are present. Document as: 1 URL → N entries (multi-track expansion).
+- PASS if: Total URLs provided == Valid URLs processed + Excluded URLs, AND all IDs in the JSON are unique.
+- FAIL otherwise — list which entries caused the failure.
 
-
-1. Formatting Requirements:
-
-
-Indentation: Use exactly 6 spaces for all indented lines.
-
-Spacing: Do not include any blank lines between keys.
-
-Quotes: Use standard double quotes for all keys and string values.
-
-Structure: Follow the exact key-value schema provided in the example below.
-
-
-2. Data & Logic Rules:
-
-Tuition: Target entry year is 2027. If 2027 rates are not published, take the 2026 rates, increase them by 4%, and append "(Est)" to the value.
-
-Notes: Start with the source URL, followed by a summary of core modules, application requirements (references/statements), and specific entry cycle details.
-
-Dates: Use YYYY-MM-DD for start_date, createdAt, and updatedAt. Use the current date for the "At" fields.
-
-Categories: Set this as an array containing the full University name along with 3–5 relevant keywords for the course  (e.g., "STEM", "Chemistry", "Masters", "UK").
-
-ID: Use [Insert Next ID].
+For each excluded URL, provide a row in a second table:
+| URL | Reason for Exclusion |
 
 
-3. Target URL: [INSERT LINK HERE]
-
-
-4. Fix Value for "status": "researching"
-
-
-5. Reference Schema:
-
-
-JSON
+=== Reference Schema ===
 
 {
-
-      "id": [ID],
-
+      "id": "[Insert Next ID]",
       "university": "",
-
       "program": "",
-
       "status": "researching",
-
       "school": "",
-
       "location": "",
-
       "program_type": "",
-
       "deadline": "",
-
       "decision_date": "",
-
       "interview_date": "",
-
       "start_date": "",
-
       "tuition": "",
-
       "app_fee": "",
-
       "scholarship": "",
-
       "min_gpa": "",
-
       "gre": "",
-
       "lang_test": "",
-
       "acceptance_rate": "",
-
       "duration": "",
-
       "prerequisites": "",
-
       "notes": "",
-
       "createdAt": "",
-
       "updatedAt": "",
-
       "categories": [],
-
       "starred": false
-
 }
